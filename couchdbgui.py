@@ -262,7 +262,7 @@ class CommentDialog( sc.SizedDialog):
 		return text
 		
 class CouchdbFrame( wx.Frame):
-	URL = "http://172.16.25.106:5984"
+	URL = "http://127.0.0.1:5984"
 	def __init__(self):
 		wx.Frame.__init__(self, None, -1, "Couchdb wxPython with python 2.6 demo", size = (800,600) )
 		self.URL = wx.GetTextFromUser( "Couchdb URL", "Enter", default_value = self.URL, parent = None) 
