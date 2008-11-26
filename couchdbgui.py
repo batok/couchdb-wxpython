@@ -9,6 +9,40 @@ import sys
 import wx.lib.editor as ed
 import wx.html as html
 
+BLOG = "blog" #change this if you want to use another couchdb database
+FAKE_USER = "COUCHDBGUI"
+FAKE_PASSWORD = "123"
+
+map_func_tags = """
+function(doc) {
+	for ( i in doc.tags) emit(doc.tags[i], 1);
+}
+"""
+
+reduce_func_tags = """
+function( keys, values) {
+	return sum(values);
+}
+"""
+
+map_func_by_author= """
+function(doc){
+	emit(doc.author, doc);
+}
+"""
+
+map_func_by_date= """
+function(doc){
+	emit(doc.date, doc);
+}
+"""
+
+map_func_all = """
+function(doc){
+	emit(null, doc);
+}
+"""
+
 class Screenshot(object):
 	def __init__(self, filename = "snap.png"):
         	self.filename = filename
@@ -38,6 +72,7 @@ class Post( schema.Document):
 	comment_date = schema.DateTimeField()
 	)))
 	date = schema.DateTimeField()
+	by_author = schema.View("all", map_func_by_author) 
 					
 
 class EditorValidator( wx.PyValidator ):
@@ -141,7 +176,7 @@ class Comment(object):
 
 class LoginDialog( sc.SizedDialog ):
 	def __init__( self , user=""):
-		sc.SizedDialog.__init__(self, None, -1 , "Login Dialog", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+		sc.SizedDialog.__init__(self, None, -1 , "Pseudo-Login Dialog", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 		self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY) # Tks to Robin Dunn for his advice on this...when using SizedDialog
 		pane = self.GetContentsPane()
 		pane.SetSizerType("form")
@@ -181,7 +216,7 @@ class EditorDialog(wx.Dialog):
 		box.Add(editor, 1, wx.ALL|wx.GROW,1)
 		win.SetSizer( box)
 		win.SetAutoLayout( True )
-		editor.SetText(["","Ejemplo","de editor"])
+		editor.SetText(["","Example","Editor"])
 		std = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
 		box.Add(std,1,wx.ALL| wx.GROW,1)
 		self.Fit()
@@ -264,12 +299,14 @@ class CommentDialog( sc.SizedDialog):
 class CouchdbFrame( wx.Frame):
 	URL = "http://127.0.0.1:5984"
 	def __init__(self):
-		wx.Frame.__init__(self, None, -1, "Couchdb wxPython with python 2.6 demo", size = (800,600) )
+		wx.Frame.__init__(self, None, -1, "Couchdb based blog (python 2.6+, wxpython 2.8.9.1+ required)", size = (800,600) )
 		self.URL = wx.GetTextFromUser( "Couchdb URL", "Enter", default_value = self.URL, parent = None) 
 
 		blog = wx.Menu()
 		post = blog.Append(-1 , "Post")
 		comment = blog.Append(-1 , "Comment")
+		tags = blog.Append(-1, "Tags")
+		authors = blog.Append(-1 , "Authors")
 		mb = wx.MenuBar()
 		engine = wx.Menu()
 		ID_MENU_LOGIN = 505
@@ -287,6 +324,8 @@ class CouchdbFrame( wx.Frame):
 		self.Bind(wx.EVT_MENU, self.OnLogin,login)
 		self.Bind(wx.EVT_MENU, self.OnEditor,id = ID_MENU_EDITOR)
 		self.Bind(wx.EVT_MENU, self.OnComment, comment)
+		self.Bind(wx.EVT_MENU, self.OnTags, tags)
+		self.Bind(wx.EVT_MENU, self.OnAuthors, authors)
 		self.Bind(wx.EVT_MENU, self.OnExit, exit)
 		self.popup = wx.Menu()
 		ID_POPUP_SHOW = wx.NewId()
@@ -322,6 +361,38 @@ class CouchdbFrame( wx.Frame):
 		with dialog( dict(dialog = EditorDialog, foo = "")) as val:
 			pass
 
+	def OnTags( self, event):
+		s = Server(self.URL)
+		bl = s[BLOG]
+		view = "tags"
+		tagsview = bl.view("all/{0}".format(view), group = True)
+		tags = []
+		for doc in tagsview:
+			tags.append(doc.key)
+		if tags:
+			default_value = "GENERAL"
+			try:
+				default_value = self.tag
+			except:
+				pass
+
+			position = -1
+			for pos, tag in enumerate(tags):
+				if tag == default_value:
+					position = pos
+					break
+			dialog = wx.SingleChoiceDialog(None, "Choose a Tag", "Tags", tags)
+			if position >= 0:
+				dialog.SetSelection(position)
+
+			if dialog.ShowModal() == wx.ID_OK:
+				self.tag = dialog.GetStringSelection()
+				self.BuildListCtrl()
+			dialog.Destroy()
+
+	def OnAuthors( self, event):
+		pass
+
 	def OnComment(self, event):
 		self.ShowCommentDialog()
 		return
@@ -336,7 +407,7 @@ class CouchdbFrame( wx.Frame):
 				return
 
 			s = Server(self.URL)
-			blog = s["blog"]
+			blog = s[BLOG]
 			p = Post.load(blog, self.blogpost)
 			p.comments.append(dict(comment_author = self.user.username, comment= comment.comment, comment_date = datetime.now() ) )
 			p.store(blog)
@@ -352,7 +423,7 @@ class CouchdbFrame( wx.Frame):
 			except:
 				return
 		s = Server(self.URL)
-		blog = s["blog"]
+		blog = s[BLOG]
 		bpost = blog[self.blogpost]
 		attachments = bpost.get("_attachments",[])
 		p = Post.load(blog, self.blogpost)
@@ -368,7 +439,7 @@ class CouchdbFrame( wx.Frame):
 		images = []
 		for a in attachments:
 			if a.endswith(".jpeg") or a.endswith(".jpg") or a.endswith(".JPEG") or a.endswith(".JPG"):
-				image = "<img src='{0}/blog/{1}/{2}' width=64 height=64>".format(self.URL, self.blogpost, a.replace(" ", "%20"))
+				image = "<img src='{0}/{3}/{1}/{2}' width=64 height=64>".format(self.URL, self.blogpost, a.replace(" ", "%20"), BLOG)
 				images.append(image)
 		if len(images) > 1:
 			image = "<br>".append(images)
@@ -393,7 +464,7 @@ class CouchdbFrame( wx.Frame):
 			"""
 			do validation here
 			"""
-			if self.user.username == "SMARTICS" and self.user.password == "secret":
+			if self.user.username == FAKE_USER and self.user.password == FAKE_PASSWORD:
 				pass
 			else:
 				self.user.username = None
@@ -422,17 +493,24 @@ class CouchdbFrame( wx.Frame):
 
 		s = Server(self.URL)
 		#self.list.ClearAll()
-		bl = s["blog"]
+		bl = s[BLOG]
 		posts = []
 		view = "by_date"
 		bg1 = wx.Colour(239,235,239)
 		bg2 = wx.Colour(255, 207,99)
+		bg3 = wx.Colour(0xCC,0xFF,0xFF)
 		blogview = bl.view("all/{0}".format(view), descending = True)
 		for doc in blogview:
 			index = self.list.InsertStringItem(sys.maxint, doc.value["_id"]) 
 			bgcolor = bg1
 			if index % 2 == 0:
 				bgcolor = bg2
+			try:
+				if self.tag != "GENERAL" and self.tag in doc.value["tags"]:
+					bgcolor = bg3
+			except:
+				pass
+
 			self.list.SetItemBackgroundColour( index , bgcolor ) 
 			self.list.SetStringItem( index, 1, doc.value["date"]) 
 			self.list.SetStringItem( index, 2, doc.value["author"]) 
@@ -446,14 +524,15 @@ class CouchdbFrame( wx.Frame):
 		self.Close()
 
 	def OnScreenshot(self, event):
+		if wx.Platform != "__WXMSW__":
+			return
 
 		sfile = "screenshot{0}".format(datetime.now())
 		for x in " .-:":
 			sfile = sfile.replace(x , "")
 		sfile = "{0}.png".format(sfile)
-		if wx.Platform == "__WXMSW__":
-			screenshot = Screenshot(filename = sfile)
-			wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
+		screenshot = Screenshot(filename = sfile)
+		wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
 
 	def OnPost(self, event):
 		try:
@@ -467,7 +546,7 @@ class CouchdbFrame( wx.Frame):
 				post.date = datetime.now()
 				try:
 					s = Server(self.URL)
-					blog = s["blog"]
+					blog = s[BLOG]
 					post.store(blog)
 					wx.MessageBox("New Post has id ... {0}".format(post.id), caption = "Post Id")
 					self.BuildListCtrl()
