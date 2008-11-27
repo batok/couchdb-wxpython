@@ -8,6 +8,7 @@ from couchdb import Server
 import sys
 import wx.lib.editor as ed
 import wx.html as html
+import time
 
 BLOG = "blog" #change this if you want to use another couchdb database
 FAKE_USER = "COUCHDBGUI"
@@ -331,11 +332,14 @@ class CouchdbFrame( wx.Frame):
 		ID_POPUP_SHOW = wx.NewId()
 		ID_POPUP_COMMENT = wx.NewId()
 		ID_POPUP_SCREENSHOT = wx.NewId()
+		ID_POPUP_SCREENSHOT_SERIES = wx.NewId()
 		self.popup.Append(ID_POPUP_SHOW, "Show Blog Post")
 		self.popup.Append(ID_POPUP_COMMENT, "Comment about Post")
 		self.popup.Append(ID_POPUP_SCREENSHOT, "Screenshot")
+		self.popup.Append(ID_POPUP_SCREENSHOT_SERIES, "Screenshot Series")
 		self.Bind(wx.EVT_MENU, self.OnComment, id = ID_POPUP_COMMENT)
 		self.Bind(wx.EVT_MENU, self.OnScreenshot, id = ID_POPUP_SCREENSHOT)
+		self.Bind(wx.EVT_MENU, self.OnScreenshotSeries, id = ID_POPUP_SCREENSHOT_SERIES)
 		self.panel = wx.Panel(self, -1)
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		self.list = wx.ListCtrl(self.panel , -1, style= wx.LC_REPORT)
@@ -438,11 +442,12 @@ class CouchdbFrame( wx.Frame):
 		image = "&nbsp;"
 		images = []
 		for a in attachments:
-			if a.endswith(".jpeg") or a.endswith(".jpg") or a.endswith(".JPEG") or a.endswith(".JPG"):
-				image = "<img src='{0}/{3}/{1}/{2}' width=64 height=64>".format(self.URL, self.blogpost, a.replace(" ", "%20"), BLOG)
+
+			if a.endswith(".jpeg") or a.endswith(".jpg") or a.endswith(".JPEG") or a.endswith(".JPG") or a.endswith("PNG") or a.endswith("png"):
+				image = "<img src='{0}/{3}/{1}/{2}' width=128 height=128>".format(self.URL, self.blogpost, a.replace(" ", "%20"), BLOG)
 				images.append(image)
 		if len(images) > 1:
-			image = "<br>".append(images)
+			image = "<br>".join(images)
 		comments = []
 		if len(p.comments) > 0:
 			for comment in p.comments:
@@ -527,12 +532,54 @@ class CouchdbFrame( wx.Frame):
 		if wx.Platform != "__WXMSW__":
 			return
 
+		wx.MessageBox("You got 5 seconds to go", "Screenshot Warning") 
+		time.sleep(5)
+
 		sfile = "screenshot{0}".format(datetime.now())
 		for x in " .-:":
 			sfile = sfile.replace(x , "")
 		sfile = "{0}.png".format(sfile)
 		screenshot = Screenshot(filename = sfile)
-		wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
+		#wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
+		try:
+			s = Server(self.URL)
+			blog = s[BLOG]
+			doc = blog[self.blogpost]
+			f = open(sfile,"rb")
+			blog.put_attachment(doc,f, sfile)
+			f.close()
+			self.BuildListCtrl()
+		except:
+			pass
+
+	def OnScreenshotSeries(self, event):
+		if wx.Platform != "__WXMSW__":
+			return
+		scnumber = wx.GetTextFromUser("How many screenshots every 3 seconds you want", "Screen Shot Series", default_value = "10")
+		time.sleep(5)
+		scseries = []
+		try:
+			for i in range(int(scnumber)):
+				sfile = "screenshot{0}".format(datetime.now())
+				for x in " .-:":
+					sfile = sfile.replace(x , "")
+				sfile = "{0}.png".format(sfile)
+				screenshot = Screenshot(filename = sfile)
+				scseries.append( sfile )
+				time.sleep(3)
+		except:
+			pass
+		try:
+			s = Server(self.URL)
+			blog = s[BLOG]
+			doc = blog[self.blogpost]
+			for fname in scseries:
+				f = open(fname,"rb")
+				blog.put_attachment(doc,f, fname)
+				f.close()
+			self.BuildListCtrl()
+		except:
+			pass
 
 	def OnPost(self, event):
 		try:
