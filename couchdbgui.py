@@ -310,12 +310,12 @@ class CouchdbFrame( wx.Frame):
 		authors = blog.Append(-1 , "Authors")
 		mb = wx.MenuBar()
 		engine = wx.Menu()
-		ID_MENU_LOGIN = 505
+		ID_MENU_LOGIN = wx.NewId() 
 		login = engine.Append(ID_MENU_LOGIN,"Login", "")
 		engine.Append(-1,"Local","", wx.ITEM_RADIO)
 		engine.Append(-1,"Tunneled ( Remote )","Remote Connection to a Couchdb engine via tunnel", wx.ITEM_RADIO)
 		engine.AppendSeparator()
-		ID_MENU_EDITOR = 508
+		ID_MENU_EDITOR = wx.NewId()
 		editor = engine.Append( ID_MENU_EDITOR, "Edit")
 		exit = engine.Append(-1, "&Exit")
 		mb.Append( engine, "Engine")
@@ -345,7 +345,6 @@ class CouchdbFrame( wx.Frame):
 		self.list = wx.ListCtrl(self.panel , -1, style= wx.LC_REPORT)
 		self.sizer.Add( self.list, 1, wx.GROW)
 		self.html = HtmlWindowViewer( self.panel, -1)
-		#self.html.SetBackgroundColour( wx.Colour(255,255,192))
 		self.sizer.Add( self.html, 1, wx.GROW)
 		self.panel.SetSizer(self.sizer)
 		self.panel.SetAutoLayout( True )
@@ -359,7 +358,6 @@ class CouchdbFrame( wx.Frame):
 			self.list.SetSize(wx.Size(795,595))
 			self.Refresh()
 			w, h = self.list.GetSize() 
-			#self.SetSize(wx.Size(w,h)) 
 
 	def OnEditor(self,event):
 		with dialog( dict(dialog = EditorDialog, foo = "")) as val:
@@ -455,9 +453,7 @@ class CouchdbFrame( wx.Frame):
 
 		contents = u"<b><font color='#0000FA'>{0} - {1} [{4}]</font></b><br>{5}<hr><b><font color='#FC0000''>{2}</font></b><br>{6}<br><br>{3}<hr>{7}".format(p.author, p.date, p.subject, p.content, mytags, myattachments, image, u"<hr>".join(comments))
 		self.html.SetPage(contents)
-		#self.html.SetBackgroundColour( wx.Colour(255,255,192))
 		self.html.Refresh()
-		pass
 
 	def OnRightClick( self, event):
 		self.PopupMenu( self.popup )
@@ -530,6 +526,8 @@ class CouchdbFrame( wx.Frame):
 
 	def OnScreenshot(self, event):
 		if wx.Platform != "__WXMSW__":
+
+			wx.MessageBox("This option works in windows only.", "Sorry") 
 			return
 
 		wx.MessageBox("You got 5 seconds to go", "Screenshot Warning") 
@@ -554,6 +552,7 @@ class CouchdbFrame( wx.Frame):
 
 	def OnScreenshotSeries(self, event):
 		if wx.Platform != "__WXMSW__":
+			wx.MessageBox("This option works in windows only.", "Sorry") 
 			return
 		scnumber = wx.GetTextFromUser("How many screenshots every 3 seconds you want", "Screen Shot Series", default_value = "10")
 		time.sleep(5)
