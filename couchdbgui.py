@@ -525,10 +525,10 @@ class CouchdbFrame( wx.Frame):
 		self.Close()
 
 	def OnScreenshot(self, event):
-		if wx.Platform != "__WXMSW__":
+		#if wx.Platform != "__WXMSW__":
 
-			wx.MessageBox("This option works in windows only.", "Sorry") 
-			return
+		#	wx.MessageBox("This option works in windows only.", "Sorry") 
+		#	return
 
 		wx.MessageBox("You got 5 seconds to go", "Screenshot Warning") 
 		time.sleep(5)
@@ -551,9 +551,9 @@ class CouchdbFrame( wx.Frame):
 			pass
 
 	def OnScreenshotSeries(self, event):
-		if wx.Platform != "__WXMSW__":
-			wx.MessageBox("This option works in windows only.", "Sorry") 
-			return
+		#if wx.Platform != "__WXMSW__":
+		#	wx.MessageBox("This option works in windows only.", "Sorry") 
+		#	return
 		scnumber = wx.GetTextFromUser("How many screenshots every 3 seconds you want", "Screen Shot Series", default_value = "10")
 		time.sleep(5)
 		scseries = []
