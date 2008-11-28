@@ -76,37 +76,6 @@ class Post( schema.Document):
 	by_author = schema.View("all", map_func_by_author) 
 					
 
-class EditorValidator( wx.PyValidator ):
-	def __init__( self, name, data):
-		wx.PyValidator.__init__(self)
-		self.name = name
-		self.data = data
-
-	def Clone( self):
-		return NonEmptyValidator(self.name, self.data)
-
-	def Validate(self, win):
-		editor = self.GetWindow()
-		text = editor.GetText()
-		# a warning.  setting SetBackgroundColour in mac os x is useless, because the background color remains the same.
-		if len(text) == 0:
-			wx.MessageBox("{0} can't be empty!".format(self.name), caption="Validation Error")
-			editor.SetBackgroundColour("pink")
-			editor.SetFocus()
-			editor.Refresh()
-			return False
-		else:
-			editor.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
-			editor.Refresh()
-			return True
-
-	def TransferToWindow( self):
-		return True
-
-	def TransferFromWindow( self):
-		editor = self.GetWindow()
-		value = editor.GetText()
-		setattr( self.data, self.name.lower(), value) 
 		
 class NonEmptyValidator( wx.PyValidator):
 	def __init__( self, name, data):
@@ -151,22 +120,6 @@ class NonEmptyValidator( wx.PyValidator):
 class HtmlWindowViewer(html.HtmlWindow):
 	def __init__(self, parent, id):
 		 html.HtmlWindow.__init__(self, parent, id, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-				        
-
-class DebugDialog( sc.SizedDialog):
-	def __init__( self, message):
-		sc.SizedDialog.__init__(self, None, -1 , "Debug Dialog",  size = ( 400,600 ), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-
-		self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY) # Tks to Robin Dunn for his advice on this...when using SizedDialog
-		pane = self.GetContentsPane()
-		pane.SetSizerType("form")
-		self.pane = pane
-		wx.StaticText( self.pane, -1, "Debug")
-		text = wx.TextCtrl( self.pane, -1 , message, size = ( 300,-1) , style=wx.TE_MULTILINE )
-		text.SetSizerProps( expand=True )
-		self.SetButtonSizer( self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
-		self.Fit()
-		self.SetMinSize(self.GetSize())
 
 class User(object):
 	username = None
@@ -207,22 +160,6 @@ class LoginDialog( sc.SizedDialog ):
 			t.SetValue(v)
 			lastposition = t.GetLastPosition()
 			t.SetInsertionPoint(lastposition)
-
-class EditorDialog(wx.Dialog):
-	def __init__( self, foo = "" ):
-		wx.Dialog.__init__(self, None, -1 , "EditorDialog",  size = ( 400,600 ), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-		win = wx.Panel(self, -1)
-		editor = ed.Editor(win, -1, style = wx.SUNKEN_BORDER )
-		box = wx.BoxSizer(wx.VERTICAL)
-		box.Add(editor, 1, wx.ALL|wx.GROW,1)
-		win.SetSizer( box)
-		win.SetAutoLayout( True )
-		editor.SetText(["","Example","Editor"])
-		std = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
-		box.Add(std,1,wx.ALL| wx.GROW,1)
-		self.Fit()
-		self.SetMinSize(self.GetSize())
-
 
 
 class PostDialog( sc.SizedDialog):
@@ -314,16 +251,12 @@ class CouchdbFrame( wx.Frame):
 		login = engine.Append(ID_MENU_LOGIN,"Login", "")
 		engine.Append(-1,"Local","", wx.ITEM_RADIO)
 		engine.Append(-1,"Tunneled ( Remote )","Remote Connection to a Couchdb engine via tunnel", wx.ITEM_RADIO)
-		engine.AppendSeparator()
-		ID_MENU_EDITOR = wx.NewId()
-		editor = engine.Append( ID_MENU_EDITOR, "Edit")
 		exit = engine.Append(-1, "&Exit")
 		mb.Append( engine, "Engine")
 		mb.Append( blog , "Blog")
 		self.SetMenuBar(mb)
 		self.Bind(wx.EVT_MENU, self.OnPost, post)
 		self.Bind(wx.EVT_MENU, self.OnLogin,login)
-		self.Bind(wx.EVT_MENU, self.OnEditor,id = ID_MENU_EDITOR)
 		self.Bind(wx.EVT_MENU, self.OnComment, comment)
 		self.Bind(wx.EVT_MENU, self.OnTags, tags)
 		self.Bind(wx.EVT_MENU, self.OnAuthors, authors)
@@ -333,11 +266,17 @@ class CouchdbFrame( wx.Frame):
 		ID_POPUP_COMMENT = wx.NewId()
 		ID_POPUP_SCREENSHOT = wx.NewId()
 		ID_POPUP_SCREENSHOT_SERIES = wx.NewId()
+		ID_POPUP_ADD_TAG = wx.NewId()
+		ID_POPUP_REMOVE_TAG = wx.NewId()
 		self.popup.Append(ID_POPUP_SHOW, "Show Blog Post")
 		self.popup.Append(ID_POPUP_COMMENT, "Comment about Post")
+		self.popup.Append(ID_POPUP_ADD_TAG, "Add Tag")
+		self.popup.Append(ID_POPUP_REMOVE_TAG, "Remove Tag")
 		self.popup.Append(ID_POPUP_SCREENSHOT, "Screenshot")
 		self.popup.Append(ID_POPUP_SCREENSHOT_SERIES, "Screenshot Series")
 		self.Bind(wx.EVT_MENU, self.OnComment, id = ID_POPUP_COMMENT)
+		self.Bind(wx.EVT_MENU, self.OnAddTag, id = ID_POPUP_ADD_TAG)
+		self.Bind(wx.EVT_MENU, self.OnRemoveTag, id = ID_POPUP_REMOVE_TAG)
 		self.Bind(wx.EVT_MENU, self.OnScreenshot, id = ID_POPUP_SCREENSHOT)
 		self.Bind(wx.EVT_MENU, self.OnScreenshotSeries, id = ID_POPUP_SCREENSHOT_SERIES)
 		self.panel = wx.Panel(self, -1)
@@ -364,8 +303,7 @@ class CouchdbFrame( wx.Frame):
 			pass
 
 	def OnTags( self, event):
-		s = Server(self.URL)
-		bl = s[BLOG]
+		bl = Server(self.URL)[BLOG]
 		view = "tags"
 		tagsview = bl.view("all/{0}".format(view), group = True)
 		tags = []
@@ -392,6 +330,53 @@ class CouchdbFrame( wx.Frame):
 				self.BuildListCtrl()
 			dialog.Destroy()
 
+	def OnAddTag( self, event ):
+		bl = Server(self.URL)[BLOG]
+		view = "tags"
+		tagsview = bl.view("all/{0}".format(view), group = True)
+		tags = []
+		for doc in tagsview:
+			tags.append(doc.key)
+		if tags:
+			dialog = wx.SingleChoiceDialog(None, "Choose a Tag", "Tags", tags)
+			tag = ""
+			if dialog.ShowModal() == wx.ID_OK:
+				tag = dialog.GetStringSelection()
+			else:
+				tag = wx.GetTextFromUser( "Specify a Tag ", "Tag")
+				if tag:
+					tag = tag.upper()
+
+			dialog.Destroy()
+			if tag:
+				p = Post.load(bl, self.blogpost)
+				tagList = p.tags
+				tagList.append(tag)
+				tagList = list(set(tagList))
+				tagList.sort()
+				p.tags = tagList
+				p.store(bl)
+				self.BuildListCtrl()
+
+	def OnRemoveTag( self, event ):
+		bl = Server(self.URL)[BLOG]
+		view = "tags"
+		tagsview = bl.view("all/{0}".format(view), group = True)
+		tags = []
+		p = Post.load(bl, self.blogpost)
+		tags = [x for x in p.tags if x != "GENERAL"]
+		if tags:
+			dialog = wx.SingleChoiceDialog(None, "Choose a Tag", "Removing Tags", tags)
+			tag = ""
+			if dialog.ShowModal() == wx.ID_OK:
+				tag = dialog.GetStringSelection()
+
+			dialog.Destroy()
+			if tag:
+				p.tags = [x for x in p.tags if x != tag ]
+				p.store(bl)
+				self.BuildListCtrl()
+
 	def OnAuthors( self, event):
 		pass
 
@@ -403,13 +388,12 @@ class CouchdbFrame( wx.Frame):
 		comment = Comment()
 		with dialog( dict(dialog = CommentDialog,  comment = comment)) as val:
 			try:
-				self.blogpost 
+				self.blogpost
 			except:
 				wx.MessageBox("Error trying to comment in a non selected item", caption = "Post Id")
 				return
 
-			s = Server(self.URL)
-			blog = s[BLOG]
+			blog = Server(self.URL)[BLOG]
 			p = Post.load(blog, self.blogpost)
 			p.comments.append(dict(comment_author = self.user.username, comment= comment.comment, comment_date = datetime.now() ) )
 			p.store(blog)
