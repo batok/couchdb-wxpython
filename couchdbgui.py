@@ -73,7 +73,13 @@ class Post( schema.Document):
 	comment_date = schema.DateTimeField()
 	)))
 	date = schema.DateTimeField()
+
+class Design( schema.Document):
 	by_author = schema.View("all", map_func_by_author) 
+	by_date = schema.View("all", map_func_by_date) 
+	all = schema.View("all", map_func_all) 
+	tags = schema.View("all", map_func_tags, reduce_func_tags) 
+
 					
 
 		
@@ -442,7 +448,7 @@ class CouchdbFrame( wx.Frame):
 	def OnRightClick( self, event):
 		self.PopupMenu( self.popup )
 		return
-
+	
 	def OnLogin(self, event):
 		self.user = User()
 		with dialog( dict(dialog = LoginDialog, user = self.user)) as val:
@@ -450,7 +456,38 @@ class CouchdbFrame( wx.Frame):
 			do validation here
 			"""
 			if self.user.username == FAKE_USER and self.user.password == FAKE_PASSWORD:
-				pass
+				try:
+					s = Server(self.URL)
+					blog = s.create(BLOG)
+					dlg = wx.MessageDialog(self, "Database {0} does not exist. Do you want to create it?".format(BLOG), "Database not found", style = wx.YES_NO)
+					if dlg.ShowModal() == wx.ID_YES:
+						from couchdb.design import ViewDefinition
+						print dir(ViewDefinition)
+						ViewDefinition.sync_many( blog, [Design.all, Design.by_date, Design.by_author, Design.tags])
+						p = Post()
+						p.author = self.user.username
+						p.subject = "Welcome Blog Post"
+						p.content = "First Post.  See that a <b>screenshot</b>  of your computer is included as attachment."
+						p.date = datetime.now()
+						p.tags = ["GENERAL", "WELCOME"]
+						p.store(blog)
+						sfile = "screenshot{0}".format(datetime.now())
+						for x in " .-:":
+							sfile = sfile.replace(x , "")
+						sfile = "{0}.png".format(sfile)
+						screenshot = Screenshot(filename = sfile)
+						doc = blog[p.id]
+						f = open(sfile,"rb")
+						blog.put_attachment(doc,f, sfile)
+						f.close()
+
+					else:
+						del s[BLOG]
+						dlg.Destroy()
+						self.Close()
+					dlg.Destroy()
+				except:
+					pass
 			else:
 				self.user.username = None
 		if not self.user.username:
@@ -470,15 +507,11 @@ class CouchdbFrame( wx.Frame):
 		except:
 			pass
 			
-			
-
 		title = "BlogId Date Author Subject"
 		for i, colTitle in enumerate(title.split(" ")):
 			self.list.InsertColumn(i, colTitle)
 
-		s = Server(self.URL)
-		#self.list.ClearAll()
-		bl = s[BLOG]
+		bl = Server(self.URL)[BLOG]
 		posts = []
 		view = "by_date"
 		bg1 = wx.Colour(239,235,239)
@@ -524,8 +557,7 @@ class CouchdbFrame( wx.Frame):
 		screenshot = Screenshot(filename = sfile)
 		#wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
 		try:
-			s = Server(self.URL)
-			blog = s[BLOG]
+			blog = Server(self.URL)[BLOG]
 			doc = blog[self.blogpost]
 			f = open(sfile,"rb")
 			blog.put_attachment(doc,f, sfile)
@@ -553,8 +585,7 @@ class CouchdbFrame( wx.Frame):
 		except:
 			pass
 		try:
-			s = Server(self.URL)
-			blog = s[BLOG]
+			blog = Server(self.URL)[BLOG]
 			doc = blog[self.blogpost]
 			for fname in scseries:
 				f = open(fname,"rb")
@@ -575,8 +606,7 @@ class CouchdbFrame( wx.Frame):
 			if val == wx.ID_OK:
 				post.date = datetime.now()
 				try:
-					s = Server(self.URL)
-					blog = s[BLOG]
+					blog = Server(self.URL)[BLOG]
 					post.store(blog)
 					wx.MessageBox("New Post has id ... {0}".format(post.id), caption = "Post Id")
 					self.BuildListCtrl()
