@@ -462,7 +462,6 @@ class CouchdbFrame( wx.Frame):
 					dlg = wx.MessageDialog(self, "Database {0} does not exist. Do you want to create it?".format(BLOG), "Database not found", style = wx.YES_NO)
 					if dlg.ShowModal() == wx.ID_YES:
 						from couchdb.design import ViewDefinition
-						print dir(ViewDefinition)
 						ViewDefinition.sync_many( blog, [Design.all, Design.by_date, Design.by_author, Design.tags])
 						p = Post()
 						p.author = self.user.username
@@ -542,10 +541,6 @@ class CouchdbFrame( wx.Frame):
 		self.Close()
 
 	def OnScreenshot(self, event):
-		#if wx.Platform != "__WXMSW__":
-
-		#	wx.MessageBox("This option works in windows only.", "Sorry") 
-		#	return
 
 		wx.MessageBox("You got 5 seconds to go", "Screenshot Warning") 
 		time.sleep(5)
@@ -555,7 +550,6 @@ class CouchdbFrame( wx.Frame):
 			sfile = sfile.replace(x , "")
 		sfile = "{0}.png".format(sfile)
 		screenshot = Screenshot(filename = sfile)
-		#wx.MessageBox("Screenshot geneated as file {0}".format(sfile), "Screenshot")
 		try:
 			blog = Server(self.URL)[BLOG]
 			doc = blog[self.blogpost]
@@ -567,9 +561,6 @@ class CouchdbFrame( wx.Frame):
 			pass
 
 	def OnScreenshotSeries(self, event):
-		#if wx.Platform != "__WXMSW__":
-		#	wx.MessageBox("This option works in windows only.", "Sorry") 
-		#	return
 		scnumber = wx.GetTextFromUser("How many screenshots every 3 seconds you want", "Screen Shot Series", default_value = "10")
 		time.sleep(5)
 		scseries = []
