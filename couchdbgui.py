@@ -177,12 +177,10 @@ class PostDialog( sc.SizedDialog):
 		self.pane = pane
 		self.post = post
 
-
 		for c in ( ["Author", user, wx.TE_READONLY, NonEmptyValidator], ["Subject", "", None, NonEmptyValidator],  ["Content", "Type html content here", wx.TE_MULTILINE, NonEmptyValidator ], ["Tags","GENERAL",None,NonEmptyValidator ]):
 			text = self.StaticAndText( c )
 			if c[0] == "Subject":
 				self.text = text
-
 	        	
 		self.SetButtonSizer( self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
 		self.Fit()
@@ -304,9 +302,6 @@ class CouchdbFrame( wx.Frame):
 			self.Refresh()
 			w, h = self.list.GetSize() 
 
-	def OnEditor(self,event):
-		with dialog( dict(dialog = EditorDialog, foo = "")) as val:
-			pass
 
 	def OnTags( self, event):
 		bl = Server(self.URL)[BLOG]
@@ -604,8 +599,6 @@ class CouchdbFrame( wx.Frame):
 				except:
 				
 					wx.MessageBox("{0}".format("Local or tunneled Couchdb server \nis not running or blog database does not exist"), caption = "Oops")
-
-
 
 	
 @contextmanager
