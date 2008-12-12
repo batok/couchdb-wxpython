@@ -26,8 +26,14 @@ function( keys, values) {
 }
 """
 
+map_func_attachments = """
+function(doc) {
+	for ( i in doc._attachments) emit(i, [doc._id, doc.author]);
+}
+"""
+
 map_func_by_author= """
-function(doc){
+function(doc){:w
 	emit(doc.author, doc);
 }
 """
@@ -79,7 +85,7 @@ class Design( schema.Document):
 	by_date = schema.View("all", map_func_by_date) 
 	all = schema.View("all", map_func_all) 
 	tags = schema.View("all", map_func_tags, reduce_func_tags) 
-
+	attachments = schema.View("all", map_func_attachments)
 					
 
 		
@@ -249,6 +255,7 @@ class CouchdbFrame( wx.Frame):
 		comment = blog.Append(-1 , "Comment")
 		tags = blog.Append(-1, "Tags")
 		authors = blog.Append(-1 , "Authors")
+		attachments = blog.Append(-1 , "Attachments")
 		mb = wx.MenuBar()
 		engine = wx.Menu()
 		ID_MENU_LOGIN = wx.NewId() 
@@ -264,6 +271,7 @@ class CouchdbFrame( wx.Frame):
 		self.Bind(wx.EVT_MENU, self.OnComment, comment)
 		self.Bind(wx.EVT_MENU, self.OnTags, tags)
 		self.Bind(wx.EVT_MENU, self.OnAuthors, authors)
+		self.Bind(wx.EVT_MENU, self.OnAttachments, attachments)
 		self.Bind(wx.EVT_MENU, self.OnExit, exit)
 		self.popup = wx.Menu()
 		ID_POPUP_SHOW = wx.NewId()
@@ -379,7 +387,41 @@ class CouchdbFrame( wx.Frame):
 				self.BuildListCtrl()
 
 	def OnAuthors( self, event):
-		pass
+		bl = Server(self.URL)[BLOG]
+		view = "by_author"
+		by_author_view = bl.view("all/{0}".format(view))
+		authors = []
+		for doc in by_author_view:
+			authors.append( doc.key )
+
+		authors = list(set(authors))
+		authors.sort()
+		if len(authors) > 0:
+			dialog = wx.SingleChoiceDialog(None, "Choose an author", "Authors", authors)
+			author = ""
+			if dialog.ShowModal() == wx.ID_OK:
+				author = dialog.GetStringSelection()
+
+			dialog.Destroy()
+
+	def OnAttachments( self, event):
+		bl = Server(self.URL)[BLOG]
+		view = "attachments"
+		attachmentsview= bl.view("all/{0}".format(view))
+		attachments = []
+		attachment_doc_ids = []
+		for doc in attachmentsview:
+			attachments.append("{0} - {1}".format(doc.key, doc.value[1]))
+			attachment_doc_ids.append( doc.value[0])
+
+		if len(attachments) > 0:
+			dialog = wx.SingleChoiceDialog(None, "Choose an attachment", "Attachments", attachments)
+			attachment = ""
+			if dialog.ShowModal() == wx.ID_OK:
+				attachment = dialog.GetStringSelection()
+				docid = attachment_doc_ids[dialog.GetSelection()]
+
+			dialog.Destroy()
 
 	def OnComment(self, event):
 		self.ShowCommentDialog()
