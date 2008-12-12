@@ -247,7 +247,7 @@ class CommentDialog( sc.SizedDialog):
 class CouchdbFrame( wx.Frame):
 	URL = "http://127.0.0.1:5984"
 	def __init__(self):
-		wx.Frame.__init__(self, None, -1, "Couchdb based blog (python 2.6+, wxpython 2.8.9.1+ required)", size = (800,600) )
+		wx.Frame.__init__(self, None, -1, "Couchdb based blog (python 2.6 or +, wxpython 2.8.9.1 or + required)", size = (800,600) )
 		self.URL = wx.GetTextFromUser( "Couchdb URL", "Enter", default_value = self.URL, parent = None) 
 
 		blog = wx.Menu()
@@ -313,11 +313,7 @@ class CouchdbFrame( wx.Frame):
 
 	def OnTags( self, event):
 		bl = Server(self.URL)[BLOG]
-		view = "tags"
-		tagsview = bl.view("all/{0}".format(view), group = True)
-		tags = []
-		for doc in tagsview:
-			tags.append(doc.key)
+		tags = [ x.key for x in bl.view("all/tags", group = True)]
 		if tags:
 			default_value = "GENERAL"
 			try:
@@ -325,14 +321,11 @@ class CouchdbFrame( wx.Frame):
 			except:
 				pass
 
-			position = -1
-			for pos, tag in enumerate(tags):
-				if tag == default_value:
-					position = pos
-					break
 			dialog = wx.SingleChoiceDialog(None, "Choose a Tag", "Tags", tags)
-			if position >= 0:
-				dialog.SetSelection(position)
+			try:
+				dialog.SetSelection(tags.index( default_value ))
+			except:
+				pass
 
 			if dialog.ShowModal() == wx.ID_OK:
 				self.tag = dialog.GetStringSelection()
@@ -341,13 +334,11 @@ class CouchdbFrame( wx.Frame):
 
 	def OnAddTag( self, event ):
 		bl = Server(self.URL)[BLOG]
-		view = "tags"
-		tagsview = bl.view("all/{0}".format(view), group = True)
-		tags = []
-		for doc in tagsview:
-			tags.append(doc.key)
+		p = Post.load(bl, self.blogpost)
+		#tags = [ x.key for x in bl.view("all/tags", group = True) if x.key not in p.tags ]  this doesnt work
+		tags = [ str(x.key) for x in bl.view("all/tags", group = True) if str(x.key) not in map(str,p.tags) ]
 		if tags:
-			dialog = wx.SingleChoiceDialog(None, "Choose a Tag", "Tags", tags)
+			dialog = wx.SingleChoiceDialog(None, "Choose a Tag or press Cancel to type it", "Tags", tags)
 			tag = ""
 			if dialog.ShowModal() == wx.ID_OK:
 				tag = dialog.GetStringSelection()
@@ -358,6 +349,7 @@ class CouchdbFrame( wx.Frame):
 
 			dialog.Destroy()
 			if tag:
+				bl = Server(self.URL)[BLOG]
 				p = Post.load(bl, self.blogpost)
 				tagList = p.tags
 				tagList.append(tag)
@@ -369,9 +361,6 @@ class CouchdbFrame( wx.Frame):
 
 	def OnRemoveTag( self, event ):
 		bl = Server(self.URL)[BLOG]
-		view = "tags"
-		tagsview = bl.view("all/{0}".format(view), group = True)
-		tags = []
 		p = Post.load(bl, self.blogpost)
 		tags = [x for x in p.tags if x != "GENERAL"]
 		if tags:
