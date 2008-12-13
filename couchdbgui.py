@@ -32,7 +32,7 @@ function(doc) {
 """
 
 map_func_by_author= """
-function(doc){:w
+function(doc){
 	emit(doc.author, doc);
 }
 """
@@ -87,6 +87,37 @@ class Design( schema.Document):
 	attachments = schema.View("all", map_func_attachments)
 					
 
+class EditorValidator( wx.PyValidator ):
+	def __init__( self, name, data):
+		wx.PyValidator.__init__(self)
+		self.name = name
+		self.data = data
+
+	def Clone( self):
+		return NonEmptyValidator(self.name, self.data)
+
+	def Validate(self, win):
+		editor = self.GetWindow()
+		text = editor.GetText()
+		# a warning.  setting SetBackgroundColour in mac os x is useless, because the background color remains the same.
+		if len(text) == 0:
+			wx.MessageBox("{0} can't be empty!".format(self.name), caption="Validation Error")
+			editor.SetBackgroundColour("pink")
+			editor.SetFocus()
+			editor.Refresh()
+			return False
+		else:
+			editor.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+			editor.Refresh()
+			return True
+
+	def TransferToWindow( self):
+		return True
+
+	def TransferFromWindow( self):
+		editor = self.GetWindow()
+		value = editor.GetText()
+		setattr( self.data, self.name.lower(), value) 
 		
 class NonEmptyValidator( wx.PyValidator):
 	def __init__( self, name, data):
