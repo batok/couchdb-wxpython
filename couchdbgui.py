@@ -6,7 +6,6 @@ import couchdb.client as client
 from datetime import datetime
 from couchdb import Server
 import sys
-import wx.lib.editor as ed
 import wx.html as html
 import time
 
@@ -536,7 +535,6 @@ class CouchdbFrame( wx.Frame):
 			self.list.InsertColumn(i, colTitle)
 
 		bl = Server(self.URL)[BLOG]
-		print self.URL
 		posts = []
 		view = "by_date"
 		bg1 = wx.Colour(239,235,239)
@@ -582,7 +580,7 @@ class CouchdbFrame( wx.Frame):
 			f = open(sfile,"rb")
 			blog.put_attachment(doc,f, sfile)
 			f.close()
-			self.BuildListCtrl()
+			self.OnLCtrl(None)
 		except:
 			pass
 
@@ -608,7 +606,7 @@ class CouchdbFrame( wx.Frame):
 				f = open(fname,"rb")
 				blog.put_attachment(doc,f, fname)
 				f.close()
-			self.BuildListCtrl()
+			self.OnLCtrl(None)
 		except:
 			pass
 
