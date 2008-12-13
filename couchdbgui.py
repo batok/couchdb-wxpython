@@ -517,7 +517,7 @@ class CouchdbFrame( wx.Frame):
 					dlg = wx.MessageDialog(self, "Database {0} does not exist. Do you want to create it?".format(BLOG), "Database not found", style = wx.YES_NO)
 					if dlg.ShowModal() == wx.ID_YES:
 						from couchdb.design import ViewDefinition
-						ViewDefinition.sync_many( blog, [Design.all, Design.by_date, Design.by_author, Design.tags])
+						ViewDefinition.sync_many( blog, [Design.all, Design.by_date, Design.by_author, Design.tags, Design.attachments])
 						p = Post()
 						p.author = self.user.username
 						p.subject = "Welcome Blog Post"
