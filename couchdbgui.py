@@ -357,7 +357,9 @@ class CouchdbFrame( wx.Frame):
 				tagList.sort()
 				p.tags = tagList
 				p.store(bl)
-				self.BuildListCtrl()
+				#event = wx.CommandEvent( wx.wxEVT_COMMAND_LIST_ITEM_SELECTED, self.list.GetId())
+				#self.GetEventHandler().ProcessEvent( event )
+				self.OnLCtrl(None)
 
 	def OnRemoveTag( self, event ):
 		bl = Server(self.URL)[BLOG]
@@ -373,7 +375,7 @@ class CouchdbFrame( wx.Frame):
 			if tag:
 				p.tags = [x for x in p.tags if x != tag ]
 				p.store(bl)
-				self.BuildListCtrl()
+				self.OnLCtrl(None)
 
 	def OnAuthors( self, event):
 		bl = Server(self.URL)[BLOG]
@@ -413,11 +415,8 @@ class CouchdbFrame( wx.Frame):
 			dialog.Destroy()
 
 	def OnComment(self, event):
-		self.ShowCommentDialog()
-		return
-
-	def ShowCommentDialog(self):
 		comment = Comment()
+
 		with dialog( dict(dialog = CommentDialog,  comment = comment)) as val:
 			try:
 				self.blogpost
@@ -537,6 +536,7 @@ class CouchdbFrame( wx.Frame):
 			self.list.InsertColumn(i, colTitle)
 
 		bl = Server(self.URL)[BLOG]
+		print self.URL
 		posts = []
 		view = "by_date"
 		bg1 = wx.Colour(239,235,239)
