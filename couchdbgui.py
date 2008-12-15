@@ -677,7 +677,7 @@ def dialog( params ):
 		dlg.Destroy()
 
 
-def main()
+def main():
 	app = wx.PySimpleApp()
 	f = CouchdbFrame()
 	f.CenterOnScreen()
