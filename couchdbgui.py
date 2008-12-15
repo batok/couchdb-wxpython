@@ -677,9 +677,12 @@ def dialog( params ):
 		dlg.Destroy()
 
 
-if __name__ == "__main__":
+def main()
 	app = wx.PySimpleApp()
 	f = CouchdbFrame()
 	f.CenterOnScreen()
 	f.Show()
 	app.MainLoop()
+
+if __name__ == "__main__":
+	main()

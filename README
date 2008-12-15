@@ -1,0 +1,46 @@
+This is a python program.
+
+Purpose:
+
+Store and retrieve blog data into a couchdb engine.
+This is not a web application , it's a desktop one.
+
+Requirements:
+
+Python 2.6 +
+wxpython 2.8.9.1 +
+couchdb-python ( from svn repository ).
+
+Tested in:
+
+Windows XP and Vista.
+Linux.
+Mac OS X Panther, Tiger and Leopard.
+
+Run:
+
+You can run it from the shell ( cmd.exe in windows ) with
+
+python couchdbgui.py
+
+(prepend to python interpreter the full path if it's not set in PATH environment variable ).
+
+Another way to run it is using the new from zip file feature in python 2.6.
+
+First make a zip from couchdbgui.py and __main__.py file.
+
+In a nix system this can be accomplished by...
+
+zip foo.pyz couchdbgui.py __main__.py
+python foo.pyz 
+
+You can call your zip file ( and extension ) whatever you want.
+
+AUTHOR:
+
+Domingo Aguilera ( aka batok )
+domingo.aguilera@gmail.com
+
+LICENSE:
+
+Free as in free lemonade.

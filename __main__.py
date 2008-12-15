@@ -1,0 +1,2 @@
+import couchdbgui
+couchdbgui.main()
