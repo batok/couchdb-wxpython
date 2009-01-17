@@ -332,6 +332,7 @@ class CouchdbFrame( wx.Frame):
 						
 		self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnLCtrl,  self.list)
 		self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnRightClick,  self.list)
+		wx.EVT_CLOSE( self, lambda _: self.Destroy())
 		event = wx.CommandEvent( wx.wxEVT_COMMAND_MENU_SELECTED, ID_MENU_LOGIN)
 		self.GetEventHandler().ProcessEvent( event )
 		self.BuildListCtrl()	
