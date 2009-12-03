@@ -239,9 +239,14 @@ class PostDialog( sc.SizedDialog):
 		else:
 			text = wx.TextCtrl(self.pane,-1, _default, validator = ValidatorClass(name, self.post))
 			
+		text.Bind(wx.EVT_SET_FOCUS, self.OnFocus)	
 		text.SetSizerProps( expand=True )
 		return text
-
+	
+	def OnFocus(self,event):
+		ctl = wx.FindWindowById( event.GetId())
+		ctl.SelectAll()
+		
 class CommentDialog( sc.SizedDialog):
 
 	def __init__( self, comment ):
