@@ -276,8 +276,13 @@ class CommentDialog( sc.SizedDialog):
 		else:
 			text = wx.TextCtrl(self.pane,-1, _default, validator = ValidatorClass(name, self.comment))
 			
+		self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)	
 		text.SetSizerProps( expand=True )
 		return text
+	
+	def OnFocus(self,event):
+		ctl = wx.FindWindowById( event.GetId())
+		ctl.SelectAll()
 		
 class CouchdbFrame( wx.Frame):
 	URL = "http://127.0.0.1:5984"
@@ -371,7 +376,6 @@ class CouchdbFrame( wx.Frame):
 	def OnAddTag( self, event ):
 		bl = Server(self.URL)[BLOG]
 		p = Post.load(bl, self.blogpost)
-		#tags = [ x.key for x in bl.view("all/tags", group = True) if x.key not in p.tags ]  this doesnt work
 		tags = [ str(x.key) for x in bl.view("all/tags", group = True) if str(x.key) not in map(str,p.tags) ]
 		if tags:
 			dialog = wx.SingleChoiceDialog(None, "Choose a Tag or press Cancel to type it", "Tags", tags)
@@ -379,7 +383,7 @@ class CouchdbFrame( wx.Frame):
 			if dialog.ShowModal() == wx.ID_OK:
 				tag = dialog.GetStringSelection()
 			else:
-				tag = wx.GetTextFromUser( "Specify a Tag ", "Tag")
+				tag = wx.GetTextFromUser( "Type a Tag ", "Tag")
 				if tag:
 					tag = tag.upper()
 
@@ -430,6 +434,11 @@ class CouchdbFrame( wx.Frame):
 				author = dialog.GetStringSelection()
 
 			dialog.Destroy()
+		try:
+			self.author = author
+			self.BuildListCtrl()
+		except:
+			pass
 
 	def OnAttachments( self, event):
 		bl = Server(self.URL)[BLOG]
