@@ -1,15 +1,20 @@
-This is a python program.
+This is a python GUI multiplatform program.
 
 Purpose:
 
 Store and retrieve blog data into a couchdb engine.
-This is not a web application , it's a desktop one.
+This is not a web application , it's a desktop one (GUI).
+The program can create the couchdb database and document views.
+A nice feature is that you can attach a screenshot ( or screenshot series ) to any blog post.
+
 
 Requirements:
 
-Python 2.6 +
-wxpython 2.8.9.1 +
-couchdb-python ( from svn repository ).
+Python 2.6 
+wxpython 2.8.9.1 or +
+couchdb-python ( installation via ... easy_install CouchDB ).
+An Apache Couchdb 0.10 engine installed in the same same computer or accesible via network ( a ssh tunel is a good approach ).
+
 
 Tested in:
 
@@ -39,6 +44,7 @@ You can call your zip file ( and extension ) whatever you want.
 AUTHOR:
 
 Domingo Aguilera ( aka batok )
+twitter : @batok
 domingo.aguilera@gmail.com
 
 LICENSE:
