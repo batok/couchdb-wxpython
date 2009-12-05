@@ -194,14 +194,12 @@ class LoginDialog( sc.SizedDialog ):
 		user.SetFocus()
 
 	def OnText(self,event):
-		id = event.GetId()
-		if id == self.ID_USERNAME:
-			t = self.FindWindowById( id )
-			v = t.GetValue()
-			v = v.upper()
-			t.SetValue(v)
-			lastposition = t.GetLastPosition()
-			t.SetInsertionPoint(lastposition)
+		t = self.FindWindowById( event.GetId() )
+		v = t.GetValue()
+		v = v.upper()
+		t.SetValue(v)
+		lastposition = t.GetLastPosition()
+		t.SetInsertionPoint(lastposition)
 
 
 class PostDialog( sc.SizedDialog):
@@ -276,7 +274,7 @@ class CommentDialog( sc.SizedDialog):
 		else:
 			text = wx.TextCtrl(self.pane,-1, _default, validator = ValidatorClass(name, self.comment))
 			
-		self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)	
+		text.Bind(wx.EVT_SET_FOCUS, self.OnFocus)	
 		text.SetSizerProps( expand=True )
 		return text
 	
