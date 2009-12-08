@@ -536,14 +536,12 @@ class CouchdbFrame( wx.Frame):
 						ViewDefinition.sync_many( blog, [Design.all, Design.by_date, Design.by_author, Design.tags, Design.attachments])
 						p = Post()
 						p.author = self.user.username
-						p.subject = "Welcome Blog Post"
+						p.subject = "Welcome Post"
 						p.content = "First Post.  See that a <b>screenshot</b>  of your computer is included as attachment."
 						p.date = datetime.now()
 						p.tags = ["GENERAL", "WELCOME"]
 						p.store(blog)
-						sfile = "screenshot{0}".format(datetime.now())
-						for x in " .-:":
-							sfile = sfile.replace(x , "")
+						sfile = REGEXP.sub("","screenshot{0}".format(datetime.now()))
 						sfile = "{0}.png".format(sfile)
 						screenshot = Screenshot(filename = sfile)
 						doc = blog[p.id]

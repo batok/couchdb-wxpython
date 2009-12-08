@@ -14,6 +14,7 @@ Python 2.6
 wxpython 2.8.9.1 or +
 couchdb-python ( installation via ... easy_install CouchDB ).
 An Apache Couchdb 0.10 engine installed in the same same computer or accesible via network ( a ssh tunel is a good approach ).
+I have used couchdb in Ubuntu 9.10.  It's available via sudo apt-get install couchdb-bin
 
 
 Tested in:
