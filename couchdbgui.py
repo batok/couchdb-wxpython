@@ -8,6 +8,9 @@ from couchdb import Server
 import sys
 import wx.html as html
 import time
+import re
+REGEXP = re.compile(r"[ \.:-]")
+
 
 BLOG = "blog" #change this if you want to use another couchdb database
 FAKE_USER = "COUCHDBGUI"
@@ -612,10 +615,7 @@ class CouchdbFrame( wx.Frame):
 
 		wx.MessageBox("You got 5 seconds to go", "Screenshot Warning") 
 		time.sleep(5)
-
-		sfile = "screenshot{0}".format(datetime.now())
-		for x in " .-:":
-			sfile = sfile.replace(x , "")
+		sfile = REGEXP.sub("","screenshot{0}".format(datetime.now()))
 		sfile = "{0}.png".format(sfile)
 		screenshot = Screenshot(filename = sfile)
 		try:
@@ -634,9 +634,7 @@ class CouchdbFrame( wx.Frame):
 		scseries = []
 		try:
 			for i in range(int(scnumber)):
-				sfile = "screenshot{0}".format(datetime.now())
-				for x in " .-:":
-					sfile = sfile.replace(x , "")
+				sfile = REGEXP.sub("","screenshot{0}".format(datetime.now()))
 				sfile = "{0}.png".format(sfile)
 				screenshot = Screenshot(filename = sfile)
 				scseries.append( sfile )
